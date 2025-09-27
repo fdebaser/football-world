@@ -5,8 +5,9 @@ from dataclasses import asdict
 import json, os
 
 from .models import Club, Player, make_player
+from .leagues import StateLeague
 
-def save_game(filepath: str, clubs: List[Club], meta: Dict[str, Any]) -> None:
+def save_game(filepath: str, clubs: List[Club], meta: Dict[str, Any], state_league: StateLeague | None = None) -> None:
     os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
     data = {
         "meta": meta,
@@ -26,12 +27,13 @@ def save_game(filepath: str, clubs: List[Club], meta: Dict[str, Any]) -> None:
                 "youth": [asdict(p) for p in c.youth],
             }
             for c in clubs
-        ]
+        ],
+        "state_league": state_league.serialize() if state_league else None,
     }
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-def load_game(filepath: str) -> tuple[list[Club], Dict[str, Any]]:
+def load_game(filepath: str) -> tuple[list[Club], Dict[str, Any], StateLeague | None]:
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
     clubs = []
@@ -51,4 +53,8 @@ def load_game(filepath: str) -> tuple[list[Club], Dict[str, Any]]:
             losses=c.get("losses", 0),
         )
         clubs.append(club)
-    return clubs, data.get("meta", {})
+    state_league = None
+    if data.get("state_league"):
+        from .leagues import StateLeague
+        state_league = StateLeague.deserialize(data["state_league"], clubs)
+    return clubs, data.get("meta", {}), state_league
