@@ -1,0 +1,4 @@
+
+# No external deps required for the CLI prototype.
+# If you later add rich UI/logging:
+# rich>=13.0.0
